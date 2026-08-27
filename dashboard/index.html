@@ -1,0 +1,72 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Test Automation Dashboard</title>
+<link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+<div class="app">
+  <header class="app-header">
+    <div class="app-header__title">
+      <h1>Test Automation Dashboard</h1>
+      <p class="subtitle">Select modules, run the suite, review the report.</p>
+    </div>
+    <span class="badge badge--mock" id="mode-badge" title="Results are simulated until a real test runner is wired into testRunner.js">
+      Mock runner
+    </span>
+  </header>
+
+  <main class="layout">
+    <section class="panel modules-panel" aria-labelledby="modules-heading">
+      <div class="panel__header">
+        <h2 id="modules-heading">Modules</h2>
+        <label class="select-all">
+          <input type="checkbox" id="select-all" />
+          Select all
+        </label>
+      </div>
+      <ul class="module-list" id="module-list"></ul>
+      <div class="panel__footer">
+        <button id="run-btn" class="btn btn--primary" disabled>Run Selected Tests</button>
+        <span class="selection-summary" id="selection-summary">0 modules · 0 testcases selected</span>
+      </div>
+    </section>
+
+    <section class="panel progress-panel" id="progress-panel" aria-labelledby="progress-heading" hidden>
+      <div class="panel__header">
+        <h2 id="progress-heading">Run Progress</h2>
+        <span id="progress-status" class="status-text">Running…</span>
+      </div>
+      <div class="overall-progress">
+        <div class="overall-progress__bar">
+          <div class="overall-progress__fill" id="overall-fill"></div>
+        </div>
+        <span id="overall-progress-label">0 / 0</span>
+      </div>
+      <ul class="module-progress-list" id="module-progress-list"></ul>
+    </section>
+
+    <section class="panel report-panel" id="report-panel" aria-labelledby="report-heading" hidden>
+      <div class="panel__header">
+        <h2 id="report-heading">Test Report</h2>
+        <div class="report-actions">
+          <button id="export-json-btn" class="btn btn--ghost">Export JSON</button>
+          <button id="export-csv-btn" class="btn btn--ghost">Export CSV</button>
+        </div>
+      </div>
+
+      <div class="summary-cards" id="summary-cards"></div>
+      <p class="report-meta" id="report-meta"></p>
+
+      <div id="report-modules"></div>
+    </section>
+  </main>
+</div>
+
+<script src="testConfig.js"></script>
+<script src="testRunner.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
