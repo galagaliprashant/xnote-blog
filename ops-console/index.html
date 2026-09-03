@@ -1,0 +1,547 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Ops Console</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Source+Serif+4:ital,wght@0,400;0,500;1,400&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#0E1418;
+    --surface:#161E24;
+    --surface2:#1D262D;
+    --border:#28333B;
+    --text:#E7ECEE;
+    --text-muted:#8FA0A8;
+    --teal:#5FA895;
+    --amber:#D99150;
+    --pass:#6FBF8B;
+    --radius:3px;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    background:var(--bg);
+    color:var(--text);
+    font-family:'Space Grotesk',sans-serif;
+    line-height:1.5;
+  }
+  .serif{font-family:'Source Serif 4',serif;}
+  .wrap{max-width:920px;margin:0 auto;padding:32px 20px 80px;}
+
+  header{
+    display:flex;
+    justify-content:space-between;
+    align-items:flex-end;
+    border-bottom:1px solid var(--border);
+    padding-bottom:20px;
+    margin-bottom:28px;
+    gap:16px;
+    flex-wrap:wrap;
+  }
+  .title-block h1{
+    font-size:1.5rem;
+    font-weight:600;
+    margin:0 0 6px;
+    letter-spacing:-0.01em;
+  }
+  .title-block p{
+    font-family:'Source Serif 4',serif;
+    font-style:italic;
+    color:var(--text-muted);
+    margin:0;
+    font-size:0.95rem;
+  }
+  .overall{
+    text-align:right;
+    min-width:160px;
+  }
+  .overall .num{
+    font-size:2rem;
+    font-weight:700;
+    color:var(--teal);
+    line-height:1;
+  }
+  .overall .lbl{
+    font-size:0.72rem;
+    color:var(--text-muted);
+    text-transform:uppercase;
+    letter-spacing:0.06em;
+  }
+
+  nav{display:flex;gap:2px;margin-bottom:28px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:3px;width:fit-content;}
+  nav button{
+    background:none;border:none;color:var(--text-muted);
+    padding:9px 18px;font-family:inherit;font-size:0.88rem;
+    cursor:pointer;border-radius:2px;
+  }
+  nav button.active{background:var(--surface2);color:var(--text);}
+
+  section{display:none;}
+  section.active{display:block;}
+
+  .suite{
+    background:var(--surface);
+    border:1px solid var(--border);
+    border-radius:var(--radius);
+    margin-bottom:16px;
+    overflow:hidden;
+  }
+  .suite-head{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    padding:14px 18px;
+    border-bottom:1px solid var(--border);
+    cursor:pointer;
+  }
+  .suite-head-left{display:flex;align-items:center;gap:10px;}
+  .priority-tag{
+    font-size:0.68rem;
+    color:var(--bg);
+    background:var(--amber);
+    padding:2px 7px;
+    border-radius:2px;
+    font-weight:600;
+  }
+  .suite-name{font-weight:600;font-size:0.98rem;}
+  .suite-why{color:var(--text-muted);font-size:0.8rem;font-family:'Source Serif 4',serif;font-style:italic;margin-top:2px;}
+  .suite-progress{display:flex;align-items:center;gap:10px;}
+  .bar{width:90px;height:5px;background:var(--surface2);border-radius:3px;overflow:hidden;}
+  .bar-fill{height:100%;background:var(--pass);}
+  .pass-count{font-size:0.78rem;color:var(--text-muted);white-space:nowrap;}
+  .caret{color:var(--text-muted);transition:transform .15s;}
+  .suite.collapsed .caret{transform:rotate(-90deg);}
+  .suite.collapsed .suite-body{display:none;}
+
+  .suite-body{padding:6px 18px 16px;}
+  .case{
+    display:flex;
+    align-items:flex-start;
+    gap:10px;
+    padding:8px 0;
+    border-bottom:1px solid var(--border);
+  }
+  .case:last-of-type{border-bottom:none;}
+  .case input[type=checkbox]{
+    margin-top:3px;
+    width:15px;height:15px;
+    accent-color:var(--pass);
+    cursor:pointer;
+    flex-shrink:0;
+  }
+  .case-text{flex:1;font-size:0.9rem;}
+  .case.done .case-text{color:var(--text-muted);text-decoration:line-through;}
+  .case button.del{
+    background:none;border:none;color:var(--text-muted);
+    cursor:pointer;font-size:0.85rem;opacity:0.5;
+  }
+  .case button.del:hover{opacity:1;color:var(--amber);}
+
+  .add-row{display:flex;gap:8px;margin-top:10px;}
+  .add-row input{
+    flex:1;background:var(--surface2);border:1px solid var(--border);
+    color:var(--text);padding:8px 10px;border-radius:2px;font-family:inherit;font-size:0.85rem;
+  }
+  .add-row button{
+    background:var(--surface2);border:1px solid var(--border);color:var(--teal);
+    padding:8px 14px;border-radius:2px;cursor:pointer;font-family:inherit;font-size:0.85rem;
+  }
+  .add-row button:hover{border-color:var(--teal);}
+
+  /* positioning wizard */
+  .step-nav{display:flex;gap:6px;margin-bottom:20px;}
+  .step-dot{
+    flex:1;height:3px;background:var(--surface2);border-radius:2px;
+  }
+  .step-dot.done{background:var(--teal);}
+  .step-dot.current{background:var(--amber);}
+
+  .step-card{
+    background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);
+    padding:24px;
+  }
+  .step-eyebrow{color:var(--amber);font-size:0.78rem;margin-bottom:6px;}
+  .step-card h2{font-size:1.15rem;margin:0 0 10px;}
+  .step-card p.desc{font-family:'Source Serif 4',serif;color:var(--text-muted);font-size:0.92rem;margin:0 0 16px;}
+  .step-card textarea{
+    width:100%;min-height:110px;background:var(--surface2);border:1px solid var(--border);
+    color:var(--text);padding:12px;border-radius:2px;font-family:'Source Serif 4',serif;
+    font-size:0.95rem;resize:vertical;
+  }
+  .step-actions{display:flex;justify-content:space-between;margin-top:18px;}
+  .step-actions button{
+    background:var(--surface2);border:1px solid var(--border);color:var(--text);
+    padding:9px 18px;border-radius:2px;cursor:pointer;font-family:inherit;font-size:0.88rem;
+  }
+  .step-actions button.primary{background:var(--teal);color:var(--bg);border-color:var(--teal);font-weight:600;}
+  .step-actions button:disabled{opacity:0.4;cursor:not-allowed;}
+
+  .locked-statement{
+    background:var(--surface2);border:1px solid var(--teal);border-radius:var(--radius);
+    padding:20px;margin-top:20px;
+  }
+  .locked-statement .lbl{font-size:0.72rem;color:var(--teal);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:8px;}
+  .locked-statement p{font-family:'Source Serif 4',serif;font-size:1.05rem;margin:0;}
+
+  .variant-row{margin-top:16px;}
+  .variant-row label{font-size:0.75rem;color:var(--text-muted);display:block;margin-bottom:4px;}
+  .variant-row input{
+    width:100%;background:var(--surface2);border:1px solid var(--border);color:var(--text);
+    padding:9px 10px;border-radius:2px;font-family:'Source Serif 4',serif;font-size:0.9rem;
+  }
+
+  footer{margin-top:40px;text-align:center;}
+  footer button{
+    background:none;border:none;color:var(--text-muted);font-size:0.75rem;
+    cursor:pointer;text-decoration:underline;
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="title-block">
+      <h1>Ops Console</h1>
+      <p>QA-grade discipline, applied to body, mind, and business.</p>
+    </div>
+    <div class="overall">
+      <div class="num" id="overallPct">0%</div>
+      <div class="lbl" id="overallLbl">0 / 0 cases passed</div>
+    </div>
+  </header>
+
+  <nav>
+    <button data-tab="board" class="active">Sprint Board</button>
+    <button data-tab="positioning">Positioning Suite</button>
+  </nav>
+
+  <section id="board" class="active"></section>
+
+  <section id="positioning">
+    <div class="step-nav" id="stepNav"></div>
+    <div id="stepCardHolder"></div>
+  </section>
+
+  <footer>
+    <button id="resetBtn">Reset all data</button>
+  </footer>
+</div>
+
+<script>
+const STORAGE_KEY = 'cw_ops_console_v1';
+
+const defaultState = {
+  activeTab: 'board',
+  positioning: {
+    currentStep: 0,
+    answers: ['', '', '', '', ''],
+    bio: '',
+    intro: ''
+  },
+  suites: [
+    {
+      id: 'remote', name: 'Remote Search', priority: 'P1',
+      why: 'Fastest lever — frees evening hours, Dec 2026 deadline.',
+      collapsed: false,
+      cases: [
+        {text:'Rewrite resume + LinkedIn headline (9 yrs SDET — IoT, AWS, API, app/web)', done:false},
+        {text:'Apply to 5 targeted hybrid/remote SDET roles', done:false},
+        {text:'Send 1 outreach message to someone at a target company', done:false},
+        {text:'Biweekly: review what\'s landing interviews, adjust framing', done:false}
+      ]
+    },
+    {
+      id: 'parambhaav', name: 'Parambhaav SOPs', priority: 'P2',
+      why: 'Must be systemized before scaling or hiring.',
+      collapsed: false,
+      cases: [
+        {text:'Document client onboarding process', done:false},
+        {text:'Document website/landing page build process', done:false},
+        {text:'Document handoff-to-junior process', done:false}
+      ]
+    },
+    {
+      id: 'positioning-suite', name: 'Positioning & Brand', priority: 'P1 (one weekend)',
+      why: 'Unblocks both niche and content decisions in one move.',
+      collapsed: false,
+      cases: [
+        {text:'Complete the 5-step Positioning Suite (see other tab)', done:false},
+        {text:'Write Instagram bio variant', done:false},
+        {text:'Write verbal intro variant', done:false}
+      ]
+    },
+    {
+      id: 'content', name: 'Content Execution', priority: 'P3 — after remote lands',
+      why: 'Runs on the consolidated Instagram, built on your positioning.',
+      collapsed: false,
+      cases: [
+        {text:'Draft content pillar list from locked positioning statement', done:false},
+        {text:'Plan first 4 posts', done:false},
+        {text:'Publish post 1', done:false}
+      ]
+    },
+    {
+      id: 'body-mind', name: 'Meditation & Fitness', priority: 'P4 — ongoing / lowest time-cost',
+      why: 'Meditation is already a daily habit; fitness is proof-of-concept content for later.',
+      collapsed: false,
+      cases: [
+        {text:'Log daily meditation streak notes for future content', done:false},
+        {text:'Research vegan muscle-building protein/calorie baseline', done:false},
+        {text:'Pick a weekend proof-of-concept fitness content angle', done:false}
+      ]
+    }
+  ]
+};
+
+function loadState(){
+  try{
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if(raw) return JSON.parse(raw);
+  }catch(e){}
+  return JSON.parse(JSON.stringify(defaultState));
+}
+function saveState(){
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+}
+
+let state = loadState();
+
+const positioningSteps = [
+  {
+    eyebrow:'Step 1 of 5',
+    title:'Dump the raw material',
+    desc:"In under 10 minutes, write every distinct insight or story you have from testing, meditation, and fitness — no filtering, no full sentences, just fragments.",
+    placeholder:"e.g. testing taught me to find the failure before it ships..."
+  },
+  {
+    eyebrow:'Step 2 of 5',
+    title:'Find the one connecting word',
+    desc:"Read your dump and name the verb or concept that shows up under all three — not a fitness word, not a testing word, one that works for both. Candidates: rigor, discipline, systems-thinking, clarity-under-pressure.",
+    placeholder:"The connecting word/concept is..."
+  },
+  {
+    eyebrow:'Step 3 of 5',
+    title:'Draft the sentence',
+    desc:"Fill: \"I bring [word] to [practice] so that [audience] can [outcome].\" Write 2–3 versions, don't overthink the first draft.",
+    placeholder:"Draft 1:\nDraft 2:\nDraft 3:"
+  },
+  {
+    eyebrow:'Step 4 of 5',
+    title:'Stress-test it against 3 people',
+    desc:"Would a fellow SDET recognize you in this sentence? Would a fellow meditator? Does it promise something you're not ready to deliver? Note which draft survives.",
+    placeholder:"Surviving draft, and why it passed all three checks..."
+  },
+  {
+    eyebrow:'Step 5 of 5',
+    title:'Lock the survivor',
+    desc:"Paste your final positioning statement below, then write the two shorter variants.",
+    placeholder:"Final locked positioning statement..."
+  }
+];
+
+function switchTab(tab){
+  state.activeTab = tab;
+  document.querySelectorAll('nav button').forEach(b=>b.classList.toggle('active', b.dataset.tab===tab));
+  document.querySelectorAll('section').forEach(s=>s.classList.toggle('active', s.id===tab));
+  saveState();
+}
+
+function totalCases(){
+  let total=0, done=0;
+  state.suites.forEach(s=>s.cases.forEach(c=>{total++; if(c.done) done++;}));
+  return {total, done};
+}
+
+function renderOverall(){
+  const {total, done} = totalCases();
+  const pct = total ? Math.round((done/total)*100) : 0;
+  document.getElementById('overallPct').textContent = pct + '%';
+  document.getElementById('overallLbl').textContent = done + ' / ' + total + ' cases passed';
+}
+
+function renderBoard(){
+  const board = document.getElementById('board');
+  board.innerHTML = '';
+  state.suites.forEach((suite, si)=>{
+    const total = suite.cases.length;
+    const done = suite.cases.filter(c=>c.done).length;
+    const pct = total ? Math.round((done/total)*100) : 0;
+
+    const div = document.createElement('div');
+    div.className = 'suite' + (suite.collapsed ? ' collapsed' : '');
+
+    div.innerHTML = `
+      <div class="suite-head" data-si="${si}">
+        <div class="suite-head-left">
+          <div>
+            <div style="display:flex;align-items:center;gap:8px;">
+              <span class="priority-tag">${suite.priority}</span>
+              <span class="suite-name">${suite.name}</span>
+            </div>
+            <div class="suite-why">${suite.why}</div>
+          </div>
+        </div>
+        <div class="suite-progress">
+          <span class="pass-count">${done}/${total}</span>
+          <div class="bar"><div class="bar-fill" style="width:${pct}%"></div></div>
+          <span class="caret">▾</span>
+        </div>
+      </div>
+      <div class="suite-body">
+        ${suite.cases.map((c,ci)=>`
+          <div class="case ${c.done?'done':''}">
+            <input type="checkbox" ${c.done?'checked':''} data-si="${si}" data-ci="${ci}" class="case-check">
+            <div class="case-text">${c.text}</div>
+            <button class="del" data-si="${si}" data-ci="${ci}">remove</button>
+          </div>
+        `).join('')}
+        <div class="add-row">
+          <input type="text" placeholder="Add a case..." data-si="${si}" class="add-input">
+          <button data-si="${si}" class="add-btn">Add</button>
+        </div>
+      </div>
+    `;
+    board.appendChild(div);
+  });
+
+  document.querySelectorAll('.suite-head').forEach(el=>{
+    el.addEventListener('click', ()=>{
+      const si = el.dataset.si;
+      state.suites[si].collapsed = !state.suites[si].collapsed;
+      saveState(); renderBoard();
+    });
+  });
+  document.querySelectorAll('.case-check').forEach(el=>{
+    el.addEventListener('click', (e)=>{
+      e.stopPropagation();
+      const si=el.dataset.si, ci=el.dataset.ci;
+      state.suites[si].cases[ci].done = el.checked;
+      saveState(); renderBoard(); renderOverall();
+    });
+  });
+  document.querySelectorAll('.case .del').forEach(el=>{
+    el.addEventListener('click', (e)=>{
+      e.stopPropagation();
+      const si=el.dataset.si, ci=el.dataset.ci;
+      state.suites[si].cases.splice(ci,1);
+      saveState(); renderBoard(); renderOverall();
+    });
+  });
+  document.querySelectorAll('.add-btn').forEach(el=>{
+    el.addEventListener('click', (e)=>{
+      e.stopPropagation();
+      const si = el.dataset.si;
+      const input = document.querySelector(`.add-input[data-si="${si}"]`);
+      const val = input.value.trim();
+      if(val){
+        state.suites[si].cases.push({text:val, done:false});
+        input.value='';
+        saveState(); renderBoard(); renderOverall();
+      }
+    });
+  });
+  document.querySelectorAll('.add-input').forEach(el=>{
+    el.addEventListener('keydown', (e)=>{
+      if(e.key==='Enter'){
+        e.stopPropagation();
+        document.querySelector(`.add-btn[data-si="${el.dataset.si}"]`).click();
+      }
+    });
+  });
+
+  renderOverall();
+}
+
+function renderStepNav(){
+  const nav = document.getElementById('stepNav');
+  nav.innerHTML = positioningSteps.map((_,i)=>{
+    let cls='step-dot';
+    if(i < state.positioning.currentStep) cls+=' done';
+    else if(i === state.positioning.currentStep) cls+=' current';
+    return `<div class="${cls}"></div>`;
+  }).join('');
+}
+
+function renderStepCard(){
+  const holder = document.getElementById('stepCardHolder');
+  const idx = state.positioning.currentStep;
+
+  if(idx >= positioningSteps.length){
+    holder.innerHTML = `
+      <div class="locked-statement">
+        <div class="lbl">Locked positioning statement</div>
+        <p class="serif">${state.positioning.answers[4] || '(not yet written)'}</p>
+      </div>
+      <div class="variant-row">
+        <label>Instagram bio variant (under 150 characters)</label>
+        <input type="text" id="bioInput" value="${state.positioning.bio || ''}" maxlength="150">
+      </div>
+      <div class="variant-row">
+        <label>Verbal intro variant ("I help people...")</label>
+        <input type="text" id="introInput" value="${state.positioning.intro || ''}">
+      </div>
+      <div class="step-actions">
+        <button id="backBtn">← Back</button>
+        <button id="restartBtn">Restart suite</button>
+      </div>
+    `;
+    document.getElementById('backBtn').onclick = ()=>{ state.positioning.currentStep = positioningSteps.length-1; saveState(); renderPositioning(); };
+    document.getElementById('restartBtn').onclick = ()=>{ state.positioning.currentStep = 0; saveState(); renderPositioning(); };
+    document.getElementById('bioInput').oninput = (e)=>{ state.positioning.bio = e.target.value; saveState(); };
+    document.getElementById('introInput').oninput = (e)=>{ state.positioning.intro = e.target.value; saveState(); };
+    return;
+  }
+
+  const step = positioningSteps[idx];
+  holder.innerHTML = `
+    <div class="step-card">
+      <div class="step-eyebrow">${step.eyebrow}</div>
+      <h2>${step.title}</h2>
+      <p class="desc">${step.desc}</p>
+      <textarea id="stepInput" placeholder="${step.placeholder}">${state.positioning.answers[idx]}</textarea>
+      <div class="step-actions">
+        <button id="prevBtn" ${idx===0?'disabled':''}>← Back</button>
+        <button id="nextBtn" class="primary">${idx===positioningSteps.length-1 ? 'Lock it in' : 'Save & continue →'}</button>
+      </div>
+    </div>
+  `;
+  document.getElementById('stepInput').oninput = (e)=>{
+    state.positioning.answers[idx] = e.target.value;
+    saveState();
+  };
+  document.getElementById('prevBtn').onclick = ()=>{
+    if(idx>0){ state.positioning.currentStep--; saveState(); renderPositioning(); }
+  };
+  document.getElementById('nextBtn').onclick = ()=>{
+    state.positioning.currentStep++;
+    saveState(); renderPositioning();
+  };
+}
+
+function renderPositioning(){
+  renderStepNav();
+  renderStepCard();
+}
+
+document.querySelectorAll('nav button').forEach(b=>{
+  b.addEventListener('click', ()=>switchTab(b.dataset.tab));
+});
+
+document.getElementById('resetBtn').addEventListener('click', ()=>{
+  if(confirm('This clears all tracked progress and positioning answers. Continue?')){
+    state = JSON.parse(JSON.stringify(defaultState));
+    saveState();
+    switchTab('board');
+    renderBoard();
+    renderPositioning();
+  }
+});
+
+switchTab(state.activeTab || 'board');
+renderBoard();
+renderPositioning();
+</script>
+</body>
+</html>
