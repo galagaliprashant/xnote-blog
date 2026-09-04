@@ -1,0 +1,5 @@
+node_modules/
+runner/reports/*.json
+.vercel/
+.env
+.env.local
