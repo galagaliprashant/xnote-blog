@@ -63,18 +63,18 @@ is sequenced, not parallel, because of this.
 
 ## Current status
 
-- [x] Repo folder created and pushed (`ops-console/`, PR #2 on
-      `galagaliprashant/xnote-blog`).
-- [x] Master plan file created, backend + runner scaffolding built and
-      pushed (MASTERPLAN.md, api/, scripts/, runner/).
-- [ ] Vercel project not yet linked: `create_git_project` requires a
-      `teamId` and `list_teams` returns none for this account via the
-      connected Vercel MCP — so I could not create/link the project myself.
-      The person needs to either link it manually (Vercel dashboard → Add
-      New Project → import `galagaliprashant/xnote-blog`, root directory
-      `ops-console`) or tell me a team slug/ID to use.
+- [x] Repo folder created and pushed (`ops-console/`).
+- [x] PR #2 (initial FE-only tracker) merged to `main`.
+- [x] Master plan file created, backend + runner scaffolding built.
+- [x] Vercel project `xnote-blog` created and linked to this repo
+      (team `prashanth-galagalis-projects`, root directory `ops-console`,
+      project id `prj_bigTqP1yhhPGyF6AdEk9xFHC7rm6`) — took a round of the
+      Vercel connector needing reauthorization to that team's scope before
+      `create_git_project` succeeded.
+- [x] PR #3 opened for this round of work (masterplan + backend + runner) —
+      #2 was already merged and closed, so follow-up work needed a new PR.
 - [ ] KV database provisioned + `OPS_CONSOLE_TOKEN` set (manual dashboard
-      steps regardless — see `ops-console/README.md`).
+      steps — see `ops-console/README.md`).
 - [ ] Positioning Suite steps 1–5 not yet completed by the person.
 - [ ] No SOPs documented yet for the agency.
 - [ ] No applications sent yet under the new weekly job-search cadence.
