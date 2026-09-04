@@ -65,10 +65,16 @@ is sequenced, not parallel, because of this.
 
 - [x] Repo folder created and pushed (`ops-console/`, PR #2 on
       `galagaliprashant/xnote-blog`).
-- [x] Master plan file created, backend + runner scaffolding built.
-- [ ] Vercel project linked + KV database provisioned + `OPS_CONSOLE_TOKEN`
-      set (KV + env var are manual dashboard steps — see
-      `ops-console/README.md`).
+- [x] Master plan file created, backend + runner scaffolding built and
+      pushed (MASTERPLAN.md, api/, scripts/, runner/).
+- [ ] Vercel project not yet linked: `create_git_project` requires a
+      `teamId` and `list_teams` returns none for this account via the
+      connected Vercel MCP — so I could not create/link the project myself.
+      The person needs to either link it manually (Vercel dashboard → Add
+      New Project → import `galagaliprashant/xnote-blog`, root directory
+      `ops-console`) or tell me a team slug/ID to use.
+- [ ] KV database provisioned + `OPS_CONSOLE_TOKEN` set (manual dashboard
+      steps regardless — see `ops-console/README.md`).
 - [ ] Positioning Suite steps 1–5 not yet completed by the person.
 - [ ] No SOPs documented yet for the agency.
 - [ ] No applications sent yet under the new weekly job-search cadence.
