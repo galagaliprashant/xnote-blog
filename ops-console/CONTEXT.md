@@ -71,10 +71,13 @@ is sequenced, not parallel, because of this.
       project id `prj_bigTqP1yhhPGyF6AdEk9xFHC7rm6`) — took a round of the
       Vercel connector needing reauthorization to that team's scope before
       `create_git_project` succeeded.
-- [x] PR #3 opened for this round of work (masterplan + backend + runner) —
-      #2 was already merged and closed, so follow-up work needed a new PR.
+- [x] PR #3 (masterplan + backend + runner) merged to `main`.
+- [x] Production deployment live: https://xnote-blog-gamma.vercel.app
+      (Vercel project `xnote-blog`, auto-deploys from `main`).
 - [ ] KV database provisioned + `OPS_CONSOLE_TOKEN` set (manual dashboard
-      steps — see `ops-console/README.md`).
+      steps — see `ops-console/README.md`). Until this is done, the live
+      site works fine but stays in local-storage-only mode (the footer
+      "Connect backend" button will 500/401 until then).
 - [ ] Positioning Suite steps 1–5 not yet completed by the person.
 - [ ] No SOPs documented yet for the agency.
 - [ ] No applications sent yet under the new weekly job-search cadence.
