@@ -192,11 +192,23 @@
     padding:9px 10px;border-radius:2px;font-family:'Source Serif 4',serif;font-size:0.9rem;
   }
 
-  footer{margin-top:40px;text-align:center;}
+  footer{margin-top:40px;text-align:center;display:flex;flex-direction:column;align-items:center;gap:8px;}
+  footer .footer-row{display:flex;align-items:center;gap:14px;}
   footer button{
     background:none;border:none;color:var(--text-muted);font-size:0.75rem;
     cursor:pointer;text-decoration:underline;
   }
+  #connStatus{font-size:0.72rem;color:var(--text-muted);}
+  #connStatus.connected{color:var(--pass);}
+
+  .activity-item{
+    display:flex;justify-content:space-between;gap:14px;
+    padding:10px 0;border-bottom:1px solid var(--border);font-size:0.85rem;
+  }
+  .activity-item:last-child{border-bottom:none;}
+  .activity-type{color:var(--teal);font-size:0.72rem;text-transform:uppercase;letter-spacing:0.04em;}
+  .activity-ts{color:var(--text-muted);font-size:0.75rem;white-space:nowrap;}
+  .activity-empty{color:var(--text-muted);font-family:'Source Serif 4',serif;font-style:italic;font-size:0.9rem;padding:12px 0;}
 </style>
 </head>
 <body>
@@ -215,6 +227,7 @@
   <nav>
     <button data-tab="board" class="active">Sprint Board</button>
     <button data-tab="positioning">Positioning Suite</button>
+    <button data-tab="activity">Activity</button>
   </nav>
 
   <section id="board" class="active"></section>
@@ -224,13 +237,79 @@
     <div id="stepCardHolder"></div>
   </section>
 
+  <section id="activity">
+    <div class="suite">
+      <div class="suite-body" style="padding-top:16px;" id="activityList"></div>
+    </div>
+  </section>
+
   <footer>
-    <button id="resetBtn">Reset all data</button>
+    <div class="footer-row">
+      <button id="resetBtn">Reset all data</button>
+      <button id="connectBtn">Connect backend</button>
+    </div>
+    <span id="connStatus">Local only — not connected</span>
   </footer>
 </div>
 
 <script>
 const STORAGE_KEY = 'cw_ops_console_v1';
+const TOKEN_KEY = 'cw_ops_console_token';
+
+// --- Backend link (Vercel API + KV). Everything here is best-effort: if the
+// backend isn't configured/reachable/authorized, every function below
+// resolves to null/no-op and the page keeps working off localStorage only.
+let backendConnected = false;
+
+function getToken(){
+  try{ return localStorage.getItem(TOKEN_KEY); }catch(e){ return null; }
+}
+function setToken(token){
+  try{ localStorage.setItem(TOKEN_KEY, token); }catch(e){}
+}
+function clearToken(){
+  try{ localStorage.removeItem(TOKEN_KEY); }catch(e){}
+}
+
+async function apiFetch(path, options){
+  const token = getToken();
+  if(!token) return null;
+  try{
+    const res = await fetch(path, Object.assign({}, options, {
+      headers: Object.assign({'content-type':'application/json','x-ops-token':token}, (options && options.headers) || {})
+    }));
+    if(res.status === 401){
+      clearToken();
+      setConnStatus(false);
+      return null;
+    }
+    if(!res.ok) return null;
+    return await res.json();
+  }catch(e){
+    return null;
+  }
+}
+
+function postEvent(type, payload){
+  apiFetch('/api/event', {method:'POST', body: JSON.stringify({type, payload: payload || {}})})
+    .then(result => { if(result) setConnStatus(true); });
+}
+
+function setConnStatus(connected){
+  backendConnected = connected;
+  const el = document.getElementById('connStatus');
+  if(!el) return;
+  el.textContent = connected ? 'Connected — recording to backend' : 'Local only — not connected';
+  el.classList.toggle('connected', connected);
+}
+
+function debounce(fn, ms){
+  let t;
+  return function(...args){
+    clearTimeout(t);
+    t = setTimeout(()=>fn.apply(this,args), ms);
+  };
+}
 
 const defaultState = {
   activeTab: 'board',
@@ -346,6 +425,50 @@ function switchTab(tab){
   document.querySelectorAll('nav button').forEach(b=>b.classList.toggle('active', b.dataset.tab===tab));
   document.querySelectorAll('section').forEach(s=>s.classList.toggle('active', s.id===tab));
   saveState();
+  if(tab === 'activity') loadActivity();
+}
+
+function renderActivity(entries){
+  const list = document.getElementById('activityList');
+  if(!backendConnected){
+    list.innerHTML = '<div class="activity-empty">Not connected to a backend yet — click "Connect backend" below to see recorded activity.</div>';
+    return;
+  }
+  if(!entries || !entries.length){
+    list.innerHTML = '<div class="activity-empty">No activity recorded yet.</div>';
+    return;
+  }
+  list.innerHTML = entries.map(e=>`
+    <div class="activity-item">
+      <div>
+        <div class="activity-type">${e.type}</div>
+        <div>${describeActivity(e)}</div>
+      </div>
+      <div class="activity-ts">${new Date(e.ts).toLocaleString()}</div>
+    </div>
+  `).join('');
+}
+
+function describeActivity(e){
+  const d = e.detail || {};
+  switch(e.type){
+    case 'case-toggle': return (d.done ? 'Checked' : 'Unchecked') + ' a case in ' + (d.suiteId || 'a suite');
+    case 'case-add': return 'Added: ' + (d.text || '');
+    case 'case-remove': return 'Removed a case from ' + (d.suiteId || 'a suite');
+    case 'suite-collapse': return (d.collapsed ? 'Collapsed' : 'Expanded') + ' ' + (d.suiteId || 'a suite');
+    case 'positioning-answer': return 'Updated positioning step ' + ((d.stepIndex ?? 0) + 1);
+    case 'positioning-step': return 'Moved to positioning step ' + ((d.currentStep ?? 0) + 1);
+    case 'positioning-bio': return 'Updated Instagram bio variant';
+    case 'positioning-intro': return 'Updated verbal intro variant';
+    case 'masterplan-sync': return `Synced masterplan (${d.suiteCount} suites, ${d.caseCount} cases)`;
+    case 'reset': return 'Reset all data';
+    default: return '';
+  }
+}
+
+async function loadActivity(){
+  const result = await apiFetch('/api/log?limit=30');
+  renderActivity(result ? result.log : null);
 }
 
 function totalCases(){
@@ -409,8 +532,10 @@ function renderBoard(){
   document.querySelectorAll('.suite-head').forEach(el=>{
     el.addEventListener('click', ()=>{
       const si = el.dataset.si;
-      state.suites[si].collapsed = !state.suites[si].collapsed;
+      const collapsed = !state.suites[si].collapsed;
+      state.suites[si].collapsed = collapsed;
       saveState(); renderBoard();
+      postEvent('suite-collapse', {suiteId: state.suites[si].id, collapsed});
     });
   });
   document.querySelectorAll('.case-check').forEach(el=>{
@@ -419,14 +544,17 @@ function renderBoard(){
       const si=el.dataset.si, ci=el.dataset.ci;
       state.suites[si].cases[ci].done = el.checked;
       saveState(); renderBoard(); renderOverall();
+      postEvent('case-toggle', {suiteId: state.suites[si].id, caseIndex: Number(ci), done: el.checked});
     });
   });
   document.querySelectorAll('.case .del').forEach(el=>{
     el.addEventListener('click', (e)=>{
       e.stopPropagation();
       const si=el.dataset.si, ci=el.dataset.ci;
+      const suiteId = state.suites[si].id;
       state.suites[si].cases.splice(ci,1);
       saveState(); renderBoard(); renderOverall();
+      postEvent('case-remove', {suiteId, caseIndex: Number(ci)});
     });
   });
   document.querySelectorAll('.add-btn').forEach(el=>{
@@ -439,6 +567,7 @@ function renderBoard(){
         state.suites[si].cases.push({text:val, done:false});
         input.value='';
         saveState(); renderBoard(); renderOverall();
+        postEvent('case-add', {suiteId: state.suites[si].id, text: val});
       }
     });
   });
@@ -487,10 +616,24 @@ function renderStepCard(){
         <button id="restartBtn">Restart suite</button>
       </div>
     `;
-    document.getElementById('backBtn').onclick = ()=>{ state.positioning.currentStep = positioningSteps.length-1; saveState(); renderPositioning(); };
-    document.getElementById('restartBtn').onclick = ()=>{ state.positioning.currentStep = 0; saveState(); renderPositioning(); };
-    document.getElementById('bioInput').oninput = (e)=>{ state.positioning.bio = e.target.value; saveState(); };
-    document.getElementById('introInput').oninput = (e)=>{ state.positioning.intro = e.target.value; saveState(); };
+    document.getElementById('backBtn').onclick = ()=>{
+      state.positioning.currentStep = positioningSteps.length-1;
+      saveState(); renderPositioning();
+      postEvent('positioning-step', {currentStep: state.positioning.currentStep});
+    };
+    document.getElementById('restartBtn').onclick = ()=>{
+      state.positioning.currentStep = 0;
+      saveState(); renderPositioning();
+      postEvent('positioning-step', {currentStep: state.positioning.currentStep});
+    };
+    document.getElementById('bioInput').oninput = debounce((e)=>{
+      state.positioning.bio = e.target.value; saveState();
+      postEvent('positioning-bio', {bio: state.positioning.bio});
+    }, 600);
+    document.getElementById('introInput').oninput = debounce((e)=>{
+      state.positioning.intro = e.target.value; saveState();
+      postEvent('positioning-intro', {intro: state.positioning.intro});
+    }, 600);
     return;
   }
 
@@ -507,16 +650,22 @@ function renderStepCard(){
       </div>
     </div>
   `;
-  document.getElementById('stepInput').oninput = (e)=>{
+  document.getElementById('stepInput').oninput = debounce((e)=>{
     state.positioning.answers[idx] = e.target.value;
     saveState();
-  };
+    postEvent('positioning-answer', {stepIndex: idx, text: state.positioning.answers[idx]});
+  }, 600);
   document.getElementById('prevBtn').onclick = ()=>{
-    if(idx>0){ state.positioning.currentStep--; saveState(); renderPositioning(); }
+    if(idx>0){
+      state.positioning.currentStep--;
+      saveState(); renderPositioning();
+      postEvent('positioning-step', {currentStep: state.positioning.currentStep});
+    }
   };
   document.getElementById('nextBtn').onclick = ()=>{
     state.positioning.currentStep++;
     saveState(); renderPositioning();
+    postEvent('positioning-step', {currentStep: state.positioning.currentStep});
   };
 }
 
@@ -536,12 +685,36 @@ document.getElementById('resetBtn').addEventListener('click', ()=>{
     switchTab('board');
     renderBoard();
     renderPositioning();
+    postEvent('reset', {});
   }
 });
+
+document.getElementById('connectBtn').addEventListener('click', async ()=>{
+  const token = prompt('Paste the ops console backend token:');
+  if(!token) return;
+  setToken(token.trim());
+  await loadStateFromBackend();
+});
+
+async function loadStateFromBackend(){
+  const remote = await apiFetch('/api/state');
+  if(remote){
+    setConnStatus(true);
+    state.suites = remote.suites;
+    state.positioning = remote.positioning;
+    saveState();
+    renderBoard();
+    renderPositioning();
+    if(state.activeTab === 'activity') loadActivity();
+  }else{
+    setConnStatus(false);
+  }
+}
 
 switchTab(state.activeTab || 'board');
 renderBoard();
 renderPositioning();
+if(getToken()) loadStateFromBackend();
 </script>
 </body>
 </html>

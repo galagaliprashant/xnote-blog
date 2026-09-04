@@ -1,0 +1,17 @@
+{
+  "name": "ops-console",
+  "private": true,
+  "version": "1.0.0",
+  "description": "Career-pivot / personal-brand tracker: static FE + Vercel API + KV backend, driven by MASTERPLAN.md.",
+  "scripts": {
+    "sync": "node scripts/sync.js",
+    "runner": "node runner/run.js",
+    "dev": "vercel dev"
+  },
+  "dependencies": {
+    "@vercel/kv": "^2.0.0"
+  },
+  "devDependencies": {
+    "playwright": "^1.47.0"
+  }
+}
